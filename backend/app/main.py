@@ -17,7 +17,8 @@ import os
 # Create DB tables
 Base.metadata.create_all(bind=engine)
 
-# Ensure upload directories exist
+# Ensure upload directories exist BEFORE mounting
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(f"{settings.UPLOAD_DIR}/products", exist_ok=True)
 os.makedirs(f"{settings.UPLOAD_DIR}/barcodes", exist_ok=True)
 
@@ -27,7 +28,6 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
-    redirects_slashes=False,
 )
 
 app.add_middleware(
@@ -42,16 +42,16 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Include routers
-app.include_router(auth_router, prefix="/api")
-app.include_router(products_router, prefix="/api")
-app.include_router(sales_router, prefix="/api")
-app.include_router(users_router, prefix="/api")
-app.include_router(supplier_router, prefix="/api")
-app.include_router(category_router, prefix="/api")
-app.include_router(expense_router, prefix="/api")
+app.include_router(auth_router,        prefix="/api")
+app.include_router(products_router,    prefix="/api")
+app.include_router(sales_router,       prefix="/api")
+app.include_router(users_router,       prefix="/api")
+app.include_router(supplier_router,    prefix="/api")
+app.include_router(category_router,    prefix="/api")
+app.include_router(expense_router,     prefix="/api")
 app.include_router(expense_cat_router, prefix="/api")
-app.include_router(dashboard_router, prefix="/api")
-app.include_router(reports_router, prefix="/api")
+app.include_router(dashboard_router,   prefix="/api")
+app.include_router(reports_router,     prefix="/api")
 
 
 @app.get("/")

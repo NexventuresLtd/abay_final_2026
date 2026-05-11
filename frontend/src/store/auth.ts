@@ -43,7 +43,7 @@ export const useAuthStore = create<AuthStore>()(
   )
 );
 
-// Theme store
+// ─── Theme store ──────────────────────────────────────────────────────────────
 interface ThemeStore {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
@@ -62,3 +62,15 @@ export const useThemeStore = create<ThemeStore>()(
     { name: 'theme-store' }
   )
 );
+
+// ─── Role helper hook ─────────────────────────────────────────────────────────
+export function useRole() {
+  const { user } = useAuthStore();
+  const role = user?.role;
+  return {
+    isAdmin: role === 'super_admin',
+    isManager: role === 'manager',
+    isCashier: role === 'cashier',
+    canManage: role === 'super_admin' || role === 'manager',
+  };
+}
