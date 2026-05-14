@@ -1,19 +1,25 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
-import { useEffect } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
+import { useEffect } from "react";
 
-import { useAuthStore, useThemeStore } from '@/store/auth';
-import Layout from '@/components/layout/Layout';
+import { useAuthStore, useThemeStore } from "@/store/auth";
+import Layout from "@/components/layout/Layout";
 
-import LoginPage from '@/pages/LoginPage';
-import { RegisterPage, SettingsPage, UsersPage } from '@/pages/OtherPages';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import DashboardPage from '@/pages/DashboardPage';
-import ProductsPage from '@/pages/ProductsPage';
-import CategoriesPage from '@/pages/CategoriesPage';
-import SalesPage from '@/pages/SalesPage';
-import { SuppliersPage, ExpensesPage, ReportsPage } from '@/pages/MiscPages';
+import LoginPage from "@/pages/LoginPage";
+import { RegisterPage, SettingsPage, UsersPage } from "@/pages/OtherPages";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import DashboardPage from "@/pages/DashboardPage";
+import ProductsPage from "@/pages/ProductsPage";
+import CategoriesPage from "@/pages/CategoriesPage";
+import SalesPage from "@/pages/SalesPage";
+import { SuppliersPage, ExpensesPage, ReportsPage } from "@/pages/MiscPages";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -34,10 +40,16 @@ function PublicRoute() {
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
 }
 
+function ManagerRoute() {
+  const { user } = useAuthStore();
+  if (user?.role === "cashier") return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
+}
+
 function ThemeInitializer() {
   const { theme } = useThemeStore();
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
   return null;
 }
@@ -52,11 +64,11 @@ export default function App() {
           toastOptions={{
             duration: 3000,
             style: {
-              background: 'var(--color-surface)',
-              color: 'var(--color-text)',
-              border: '1px solid var(--color-border)',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
+              background: "var(--color-surface)",
+              color: "var(--color-text)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "0.5rem",
+              fontSize: "0.875rem",
             },
           }}
         />
@@ -69,7 +81,7 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           </Route>
 
-          {/* Protected */}
+          {/* Protected — all roles */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -77,10 +89,14 @@ export default function App() {
               <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/sales" element={<SalesPage />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
-              <Route path="/expenses" element={<ExpensesPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/users" element={<UsersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/users" element={<UsersPage />} />
+
+              {/* Manager / Admin only */}
+              <Route element={<ManagerRoute />}>
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/reports" element={<ReportsPage />} />
+              </Route>
             </Route>
           </Route>
 
