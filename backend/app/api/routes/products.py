@@ -16,7 +16,7 @@ router = APIRouter(prefix="/products", tags=["Products"])
 def _query(db, search=None, category_id=None, supplier_id=None, stock_status=None):
     q = db.query(Product).options(
         joinedload(Product.category), joinedload(Product.supplier)
-    )
+    ).filter(Product.is_active == True)
     if search:
         q = q.filter(
             or_(
@@ -38,7 +38,7 @@ def _query(db, search=None, category_id=None, supplier_id=None, stock_status=Non
     return q
 
 
-@router.get("/", response_model=dict)
+@router.get("", response_model=dict)
 def list_products(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -61,7 +61,7 @@ def list_products(
     }
 
 
-@router.post("/", response_model=ProductOut, status_code=201)
+@router.post("", response_model=ProductOut, status_code=201)
 def create_product(
     payload: ProductCreate,
     db: Session = Depends(get_db),

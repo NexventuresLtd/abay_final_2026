@@ -23,7 +23,7 @@ from app.core.deps import get_current_user, admin_or_manager
 supplier_router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
 
-@supplier_router.get("/", response_model=dict)
+@supplier_router.get("", response_model=dict)
 def list_suppliers(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -36,10 +36,16 @@ def list_suppliers(
         q = q.filter(Supplier.name.ilike(f"%{search}%") | Supplier.company_name.ilike(f"%{search}%"))
     total = q.count()
     items = q.offset((page - 1) * per_page).limit(per_page).all()
-    return {"items": [SupplierOut.model_validate(s) for s in items], "total": total, "page": page, "per_page": per_page, "pages": (total + per_page - 1) // per_page}
+    return {
+        "items": [SupplierOut.model_validate(s) for s in items],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page,
+    }
 
 
-@supplier_router.post("/", response_model=SupplierOut, status_code=201)
+@supplier_router.post("", response_model=SupplierOut, status_code=201)
 def create_supplier(payload: SupplierCreate, db: Session = Depends(get_db), _=Depends(admin_or_manager)):
     s = Supplier(**payload.model_dump())
     db.add(s)
@@ -82,12 +88,12 @@ def delete_supplier(supplier_id: int, db: Session = Depends(get_db), _=Depends(a
 category_router = APIRouter(prefix="/categories", tags=["Categories"])
 
 
-@category_router.get("/", response_model=list[CategoryOut])
+@category_router.get("", response_model=list[CategoryOut])
 def list_categories(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(Category).all()
 
 
-@category_router.post("/", response_model=CategoryOut, status_code=201)
+@category_router.post("", response_model=CategoryOut, status_code=201)
 def create_category(payload: CategoryCreate, db: Session = Depends(get_db), _=Depends(admin_or_manager)):
     if db.query(Category).filter(Category.name == payload.name).first():
         raise HTTPException(status_code=400, detail="Category already exists")
@@ -124,12 +130,12 @@ def delete_category(cat_id: int, db: Session = Depends(get_db), _=Depends(admin_
 expense_cat_router = APIRouter(prefix="/expense-categories", tags=["Expense Categories"])
 
 
-@expense_cat_router.get("/", response_model=list[ExpenseCategoryOut])
+@expense_cat_router.get("", response_model=list[ExpenseCategoryOut])
 def list_expense_cats(db: Session = Depends(get_db), _=Depends(get_current_user)):
     return db.query(ExpenseCategory).all()
 
 
-@expense_cat_router.post("/", response_model=ExpenseCategoryOut, status_code=201)
+@expense_cat_router.post("", response_model=ExpenseCategoryOut, status_code=201)
 def create_expense_cat(payload: ExpenseCategoryCreate, db: Session = Depends(get_db), _=Depends(admin_or_manager)):
     ec = ExpenseCategory(**payload.model_dump())
     db.add(ec)
@@ -142,7 +148,7 @@ def create_expense_cat(payload: ExpenseCategoryCreate, db: Session = Depends(get
 expense_router = APIRouter(prefix="/expenses", tags=["Expenses"])
 
 
-@expense_router.get("/", response_model=dict)
+@expense_router.get("", response_model=dict)
 def list_expenses(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -161,10 +167,16 @@ def list_expenses(
         q = q.filter(func.date(Expense.expense_date) <= date_to)
     total = q.count()
     items = q.order_by(Expense.expense_date.desc()).offset((page - 1) * per_page).limit(per_page).all()
-    return {"items": [ExpenseOut.model_validate(e) for e in items], "total": total, "page": page, "per_page": per_page, "pages": (total + per_page - 1) // per_page}
+    return {
+        "items": [ExpenseOut.model_validate(e) for e in items],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": (total + per_page - 1) // per_page,
+    }
 
 
-@expense_router.post("/", response_model=ExpenseOut, status_code=201)
+@expense_router.post("", response_model=ExpenseOut, status_code=201)
 def create_expense(payload: ExpenseCreate, db: Session = Depends(get_db), _=Depends(admin_or_manager)):
     e = Expense(**payload.model_dump())
     db.add(e)
@@ -232,7 +244,10 @@ def get_dashboard_stats(db: Session = Depends(get_db), _=Depends(get_current_use
         Product.quantity > 0,
         Product.is_active == True
     ).count()
-    out_of_stock = db.query(Product).filter(Product.quantity == 0, Product.is_active == True).count()
+    out_of_stock = db.query(Product).filter(
+        Product.quantity == 0,
+        Product.is_active == True
+    ).count()
 
     recent_sales = db.query(Sale).options(
         joinedload(Sale.cashier),
@@ -256,19 +271,29 @@ def get_dashboard_stats(db: Session = Depends(get_db), _=Depends(get_current_use
             extract("year", Expense.expense_date) == now.year,
             extract("month", Expense.expense_date) == month
         ).scalar() or 0.0
-        monthly_revenue.append({"month": month, "revenue": round(rev, 2), "expenses": round(exp, 2)})
+        monthly_revenue.append({
+            "month": month,
+            "revenue": round(rev, 2),
+            "expenses": round(exp, 2),
+        })
 
     top_products_raw = db.query(
         SaleItem.product_id,
         func.sum(SaleItem.quantity).label("sold"),
         func.sum(SaleItem.total).label("revenue")
-    ).group_by(SaleItem.product_id).order_by(func.sum(SaleItem.quantity).desc()).limit(5).all()
+    ).group_by(SaleItem.product_id).order_by(
+        func.sum(SaleItem.quantity).desc()
+    ).limit(5).all()
 
     top_products = []
     for row in top_products_raw:
         p = db.query(Product).filter(Product.id == row.product_id).first()
         if p:
-            top_products.append({"name": p.name, "sold": row.sold, "revenue": round(row.revenue, 2)})
+            top_products.append({
+                "name": p.name,
+                "sold": row.sold,
+                "revenue": round(row.revenue, 2),
+            })
 
     return {
         "total_products": total_products,
@@ -365,7 +390,10 @@ def export_excel(
             cell.font = header_font
             cell.fill = header_fill
 
-        products = db.query(Product).options(joinedload(Product.category), joinedload(Product.supplier)).all()
+        products = db.query(Product).options(
+            joinedload(Product.category),
+            joinedload(Product.supplier)
+        ).all()
         for row_num, p in enumerate(products, 2):
             ws.cell(row=row_num, column=1, value=p.id)
             ws.cell(row=row_num, column=2, value=p.name)

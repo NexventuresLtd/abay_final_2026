@@ -16,7 +16,7 @@ def generate_reference() -> str:
     return f"INV-{datetime.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
 
 
-@router.post("/", response_model=SaleOut, status_code=201)
+@router.post("", response_model=SaleOut, status_code=201)
 def create_sale(
     payload: SaleCreate,
     db: Session = Depends(get_db),
@@ -96,7 +96,7 @@ def create_sale(
     ).filter(Sale.id == sale.id).first()
 
 
-@router.get("/", response_model=dict)
+@router.get("", response_model=dict)
 def list_sales(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),

@@ -9,7 +9,7 @@ from app.core.deps import admin_or_manager, super_admin_only
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.get("/", response_model=dict)
+@router.get("", response_model=dict)
 def list_users(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -27,7 +27,7 @@ def list_users(
     }
 
 
-@router.post("/", response_model=UserOut, status_code=201)
+@router.post("", response_model=UserOut, status_code=201)
 def create_user(payload: UserRegister, db: Session = Depends(get_db), _=Depends(super_admin_only)):
     if db.query(User).filter(User.email == payload.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
